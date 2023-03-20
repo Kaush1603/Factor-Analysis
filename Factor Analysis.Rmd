@@ -1,0 +1,102 @@
+---
+title: "Factor_Analysis"
+output: html_document
+date: "2023-03-03"
+---
+
+```{r}
+# Factor Analysis
+
+library(psych)
+
+Eskull <- read.csv("C:/Users/tarun/Downloads/Egyptian skulls.csv")
+
+attach(Eskull)
+Eskull[1]
+#Using the varimax method
+#RC values, h2 & u2 values
+fit.pc <- principal(Eskull[-1], nfactors=4, rotate="varimax")
+fit.pc
+#h2 - Explained variance
+#u2 - Unexplained variance
+#h2 nd u2 add up to 1
+#The Proportion explained shows us the PCA values
+
+#Eigen Values
+round(fit.pc$values, 3)
+#The above are the eigen values
+
+#Clubbing columns to RCs
+fit.pc$loadings
+
+#We need to look for values over 0.5
+#RC2 shows relation with Nasal.height
+#RC3 shows relation with Maximum.breadth
+#RC1 shows relation with Basibregmatic.height and Basialveolar.length
+
+# Loadings with more digits
+for (i in c(1,3,2,4)) { print(fit.pc$loadings[[1,i]])}
+# Communalities
+fit.pc$communality
+# Rotated factor scores, Notice the columns ordering: RC1, RC3, RC2 and RC4
+fit.pc$scores
+# Play with FA utilities
+
+fa.parallel(Eskull[-1]) # See factor recommendation
+fa.plot(fit.pc) # See Correlations within Factors
+fa.diagram(fit.pc) # Visualize the relationship
+vss(Eskull[-1]) # See Factor recommendations for a simple structure
+
+
+
+
+# Computing Correlation Matrix
+corrm.emp <- cor(Eskull[-1])
+corrm.emp
+plot(corrm.emp)
+Eskull_pca <- prcomp(Eskull[-1], scale=TRUE)
+summary(Eskull_pca)
+plot(Eskull_pca)
+# A table containing eigenvalues and %'s accounted, follows. Eigenvalues are the sdev^2
+(eigen_Eskull <- round(Eskull_pca$sdev^2,3))
+round(fit.pc$values, 3)
+eigen_Eskull
+sumlambdas <- sum(eigen_Eskull)
+sumlambdas
+propvar <- round(eigen_Eskull/sumlambdas,2)
+propvar
+cumvar_Eskull <- cumsum(propvar)
+cumvar_Eskull
+matlambdas <- rbind(eigen_Eskull,propvar,cumvar_Eskull)
+matlambdas
+rownames(matlambdas) <- c("Eigenvalues","Prop. variance","Cum. prop. variance")
+rownames(matlambdas)
+eigvec.emp <- Eskull_pca$rotation
+print(Eskull_pca)
+# Taking the first four PCs to generate linear combinations for all the variables with four factors
+pcafactors.emp <- eigvec.emp[,1:4]
+pcafactors.emp
+# Multiplying each column of the eigenvector’s matrix by the square-root of the corresponding eigenvalue in order to get the factor loadings
+unrot.fact.emp <- sweep(pcafactors.emp,MARGIN=2,Eskull_pca$sdev[1:4],`*`)
+unrot.fact.emp
+# Computing communalities
+communalities.emp <- rowSums(unrot.fact.emp^2)
+communalities.emp
+# Performing the varimax rotation. The default in the varimax function is norm=TRUE thus, Kaiser normalization is carried out
+rot.fact.emp <- varimax(unrot.fact.emp)
+#View(unrot.fact.emp)
+rot.fact.emp
+# The print method of varimax omits loadings less than abs(0.1). In order to display all the loadings, it is necessary to ask explicitly the contents of the object $loadings
+fact.load.emp <- rot.fact.emp$loadings[1:4,1:4]
+fact.load.emp
+# Computing the rotated factor scores for the 30 European Countries. Notice that signs are reversed for factors F2 (PC2), F3 (PC3) and F4 (PC4)
+scale.emp <- scale(Eskull[-1])
+scale.emp
+as.matrix(scale.emp)%*%fact.load.emp%*%solve(t(fact.load.emp)%*%fact.load.emp)
+
+
+
+
+
+
+```
